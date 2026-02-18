@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drawing Board</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="google-signin-client_id" content="147659911046-38fji05f1uu7harc6gs7hrh632ia6sgh.apps.googleusercontent.com">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        canvas {
+            cursor: crosshair;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .tool-btn {
+            transition: all 0.3s ease;
+        }
+        .tool-btn:hover {
+            transform: translateY(-2px);
+        }
+        .tool-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.05);
+        }
+        .color-picker {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .color-picker:hover {
+            transform: scale(1.1);
+        }
+        .brush-size-preview {
+            transition: all 0.3s ease;
+        }
+        .auth-overlay {
+            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .user-profile {
+            transition: all 0.3s ease;
+        }
+        .user-profile:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="text-center mb-8 relative">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-palette mr-2"></i>Drawing Board
+            </h1>
+            <p class="text-gray-600">Express your creativity with our digital canvas</p>
+            
+            <!-- User Profile Section -->
+            <div id="userProfile" class="absolute top-0 right-0 hidden">
+                <div class="user-profile bg-white rounded-lg shadow-lg p-3 flex items-center gap-3">
+                    <img id="userAvatar" src="" alt="User Avatar" class="w-10 h-10 rounded-full">
+                    <div class="text-left">
+                        <p id="userName" class="font-semibold text-gray-800"></p>
+                        <button id="signOutBtn" class="text-sm text-red-500 hover:text-red-700">
+                            <i class="fas fa-sign-out-alt mr-1"></i>Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Authentication Overlay -->
+        <div id="authOverlay" class="auth-overlay fixed inset-0 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
+                <div class="text-center">
+                    <i class="fas fa-palette text-6xl text-purple-600 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome to Drawing Board</h2>
+                    <p class="text-gray-600 mb-6">Please sign in with your Google account to start creating amazing artwork</p>
+                    
+                    <div id="googleSignInBtn" class="flex justify-center">
+                        <!-- Google Sign-In button will be rendered here -->
+                    </div>
+                    
+                    <p class="text-sm text-gray-500 mt-6">
+                        <i class="fas fa-lock mr-1"></i>
+                        Your data is secure and never shared
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <main class="max-w-6xl mx-auto">
+            <!-- Tools Panel -->
+            <section class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <!-- Drawing Tools -->
+                    <div class="flex gap-3">
+                        <button id="brushTool" class="tool-btn active bg-gray-100 hover:bg-gray-200 p-3 rounded-lg" title="Brush">
+                            <i class="fas fa-paintbrush text-xl"></i>
+                        </button>
+                        <button id="eraserTool" class="tool-btn bg-gray-100 hover:bg-gray-200 p-3 rounded-lg" title="Eraser">
+                            <i class="fas fa-eraser text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Color Picker -->
+                    <div class="flex items-center gap-3">
+                        <label class="text-gray-700 font-medium">Color:</label>
+                        <input type="color" id="colorPicker" class="color-picker" value="#000000">
+                        <div class="flex gap-2">
+                            <button class="w-8 h-8 rounded-full bg-black hover:scale-110 transition-transform" data-color="#000000"></button>
+                            <button class="w-8 h-8 rounded-full bg-red-500 hover:scale-110 transition-transform" data-color="#ef4444"></button>
+                            <button class="w-8 h-8 rounded-full bg-blue-500 hover:scale-110 transition-transform" data-color="#3b82f6"></button>
+                            <button class="w-8 h-8 rounded-full bg-green-500 hover:scale-110 transition-transform" data-color="#10b981"></button>
+                            <button class="w-8 h-8 rounded-full bg-yellow-400 hover:scale-110 transition-transform" data-color="#fbbf24"></button>
+                            <button class="w-8 h-8 rounded-full bg-purple-500 hover:scale-110 transition-transform" data-color="#a855f7"></button>
+                        </div>
+                    </div>
+
+                    <!-- Brush Size -->
+                    <div class="flex items-center gap-3">
+                        <label class="text-gray-700 font-medium">Size:</label>
+                        <input type="range" id="brushSize" min="1" max="50" value="5" class="w-32">
+                        <div class="flex items-center gap-2">
+                            <div id="sizePreview" class="brush-size-preview bg-black rounded-full" style="width: 5px; height: 5px;"></div>
+                            <span id="sizeValue" class="text-gray-600 font-medium">5</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <button id="clearCanvas" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-trash mr-2"></i>Clear
+                        </button>
+                        <button id="downloadCanvas" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-download mr-2"></i>Download
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Canvas Container -->
+            <section class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-center">
+                    <canvas id="drawingCanvas" width="800" height="500" class="border-2 border-gray-300 rounded-lg bg-white"></canvas>
+                </div>
+            </section>
+
+            <!-- Status Bar -->
+            <footer class="mt-6 text-center text-gray-600">
+                <p>Click and drag to draw • Right-click to quickly erase</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
