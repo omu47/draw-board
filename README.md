@@ -1,5 +1,4 @@
-[# Drawing Board with Google Authentication
-
+DRAW BOARD
 A modern web-based drawing application with Google OAuth authentication.
 
 ## Features
